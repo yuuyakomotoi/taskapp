@@ -10,12 +10,16 @@ import UIKit
 import RealmSwift
 import UserNotifications
 
-class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource,UISearchBarDelegate {
 
+ 
+   
     @IBOutlet weak var tableView: UITableView!
    
-   let realm = try! Realm()
-    let taskArray = try! Realm().objects(Task.self).sorted(byProperty: "date", ascending: false)
+    @IBOutlet weak var SH: UISearchBar!
+   
+    let realm = try! Realm()
+    var taskArray = try! Realm().objects(Task.self).sorted(byProperty: "date", ascending: false)
     
     
     
@@ -24,7 +28,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
     tableView.delegate = self
     tableView.dataSource = self
-        
+        SH.delegate = self
     }
 
     override func didReceiveMemoryWarning() {
@@ -37,15 +41,19 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell{
-        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath as IndexPath)
+        
         let task = taskArray[indexPath.row]
         cell.textLabel?.text = task.title
+        
         
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm"
         
         let dateString:String = formatter.string(from: task.date as Date)
         cell.detailTextLabel?.text = dateString
+        
+        
         
         return cell
     }
@@ -70,9 +78,10 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             
             
             try! realm.write {
-                self.realm.delete(task)
+                self.realm.delete(self.taskArray[indexPath.row])
                 tableView.deleteRows(at: [indexPath as IndexPath], with: UITableViewRowAnimation.fade)
             }
+
             
             
             center.getPendingNotificationRequests { (requests: [UNNotificationRequest]) in
@@ -83,11 +92,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                 }
             }
         }
-        try! realm.write {
-            self.realm.delete(self.taskArray[indexPath.row])
-            tableView.deleteRows(at: [indexPath as IndexPath], with: UITableViewRowAnimation.fade)
-        }
-    }
+            }
 
     
     
@@ -114,13 +119,13 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         tableView.reloadData()
     }
     
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+         taskArray = realm.objects(Task.self).filter("category contains %@", searchText)
+        tableView.reloadData()
+        print(searchText)
+    }
 
 }
-
-
-
-
-
 
 
 
